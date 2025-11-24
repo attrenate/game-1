@@ -6,7 +6,6 @@ const tileCount = canvas.width / tileSize;
 
 let snakeX = 10;
 let snakeY = 10;
-
 let velocityX = 1;
 let velocityY = 0;
 
@@ -19,6 +18,28 @@ let snakeLength = 5;
 let foodX = Math.floor(Math.random() * tileCount);
 let foodY = Math.floor(Math.random() * tileCount);
 
+let score = 0;
+let gameOver = false;
+
+const restartBtn = document.getElementById("restartBtn");
+
+// Restart game logic
+restartBtn.addEventListener("click", () => {
+    snakeX = 10;
+    snakeY = 10;
+    velocityX = 1;
+    velocityY = 0;
+    snakeBody = [];
+    snakeLength = 5;
+    score = 0;
+    gameOver = false;
+    foodX = Math.floor(Math.random() * tileCount);
+    foodY = Math.floor(Math.random() * tileCount);
+    restartBtn.style.display = "none";
+    drawGame();
+});
+
+// Game loop
 function drawGame(time = 0){
     const secondsSinceLastFrame = (time - lastTime) / 1000;
     if(secondsSinceLastFrame < 1 / speed){
@@ -27,34 +48,63 @@ function drawGame(time = 0){
     }
     lastTime = time;
 
-    // move snake
+    // Move snake
     snakeX += velocityX;
     snakeY += velocityY;
 
-    // check if snake eats food
+    // Check collision with walls
+    if (snakeX < 0 || snakeX >= tileCount || snakeY < 0 || snakeY >= tileCount) {
+        gameOver = true;
+    }
+
+    // Check collision with self
+    for (let part of snakeBody.slice(0, -1)) {
+        if (part.x === snakeX && part.y === snakeY) {
+            gameOver = true;
+        }
+    }
+
+    // Handle game over
+    if(gameOver){
+        ctx.fillStyle = "white";
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.fillText("Score: " + score, canvas.width / 2, canvas.height / 2 + 20);
+        restartBtn.style.display = "block";
+        return;
+    }
+
+    // Check if snake eats food
     if (snakeX === foodX && snakeY === foodY){
         snakeLength++;
+        score++;
         foodX = Math.floor(Math.random() * tileCount);
         foodY = Math.floor(Math.random() * tileCount);
     }
 
-    // add new head to snake body
+    // Add new head to snake body
     snakeBody.push({x: snakeX, y: snakeY});
 
-    // remove old parts if snake is too long
+    // Remove old parts if snake is too long
     while (snakeBody.length > snakeLength) {
         snakeBody.shift();
     }
 
-    // clear canvas
+    // Clear canvas
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // draw food
+    // Draw score
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, 10, 20);
+
+    // Draw food
     ctx.fillStyle = "red";
     ctx.fillRect(foodX * tileSize, foodY * tileSize, tileSize, tileSize);
 
-    // draw snake body
+    // Draw snake body
     ctx.fillStyle = "lime";
     for (let part of snakeBody) {
         ctx.fillRect(part.x * tileSize, part.y * tileSize, tileSize, tileSize);
@@ -65,7 +115,7 @@ function drawGame(time = 0){
 
 drawGame();
 
-// keyboard controls
+// Keyboard controls
 document.addEventListener("keydown", (e) =>{
     switch(e.key) {
         case "ArrowUp":
